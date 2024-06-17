@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from torchvision.utils import make_grid
-from base import BaseTrainer
+from .base_trainer import BaseTrainer
 from utils import inf_loop, MetricTracker
 
 
@@ -50,14 +50,17 @@ class Trainer(BaseTrainer):
             self.writer.set_step((epoch - 1) * self.len_epoch + batch_idx)
             self.train_metrics.update('loss', loss.item())
             for met in self.metric_ftns:
-                self.train_metrics.update(met.__name__, met(output, target))
+                try:
+                    self.train_metrics.update(met.__name__, met(output, target))
+                except ValueError:
+                    pass
 
             if batch_idx % self.log_step == 0:
                 self.logger.debug('Train Epoch: {} {} Loss: {:.6f}'.format(
                     epoch,
                     self._progress(batch_idx),
                     loss.item()))
-                self.writer.add_image('input', make_grid(data.cpu(), nrow=8, normalize=True))
+                #self.writer.add_image('input', make_grid(data.cpu(), nrow=8, normalize=True))
 
             if batch_idx == self.len_epoch:
                 break
@@ -88,10 +91,13 @@ class Trainer(BaseTrainer):
                 loss = self.criterion(output, target)
 
                 self.writer.set_step((epoch - 1) * len(self.valid_data_loader) + batch_idx, 'valid')
-                self.valid_metrics.update('loss', loss.item())
+                self.valid_metrics.update('loss', loss.item()) # item() 获取值
                 for met in self.metric_ftns:
-                    self.valid_metrics.update(met.__name__, met(output, target))
-                self.writer.add_image('input', make_grid(data.cpu(), nrow=8, normalize=True))
+                    try:
+                        self.valid_metrics.update(met.__name__, met(output, target))
+                    except ValueError:
+                        pass
+                #self.writer.add_image('input', make_grid(data.cpu(), nrow=8, normalize=True))
 
         # add histogram of model parameters to the tensorboard
         for name, p in self.model.named_parameters():

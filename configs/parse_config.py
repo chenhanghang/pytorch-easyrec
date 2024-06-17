@@ -19,12 +19,13 @@ class ConfigParser:
         :param run_id: Unique Identifier for training processes. Used to save checkpoints and training log. Timestamp is being used as default
         """
         # load config file and apply modification
-        self._config = _update_config(config, modification)
+        self._config = _update_config(config, modification) # 根据命令行参数修改 config
         self.resume = resume
 
         # set save_dir where trained model and log will be saved.
         save_dir = Path(self.config['trainer']['save_dir'])
-
+        
+        # 设置 模型和日志路径
         exper_name = self.config['name']
         if run_id is None: # use timestamp as default run-id
             run_id = datetime.now().strftime(r'%m%d_%H%M%S')
@@ -33,7 +34,7 @@ class ConfigParser:
 
         # make directory for saving checkpoints and log.
         exist_ok = run_id == ''
-        self.save_dir.mkdir(parents=True, exist_ok=exist_ok)
+        self.save_dir.mkdir(parents=True, exist_ok=exist_ok) # exist_ok=True 如果父目录已经存在则不会报错
         self.log_dir.mkdir(parents=True, exist_ok=exist_ok)
 
         # save updated config file to the checkpoint dir
@@ -55,11 +56,11 @@ class ConfigParser:
         for opt in options:
             args.add_argument(*opt.flags, default=None, type=opt.type)
         if not isinstance(args, tuple):
-            args = args.parse_args()
+            args = args.parse_args() # 转成args 对象
 
         if args.device is not None:
-            os.environ["CUDA_VISIBLE_DEVICES"] = args.device
-        if args.resume is not None:
+            os.environ["CUDA_VISIBLE_DEVICES"] = args.device #设置可用GPU设备
+        if args.resume is not None: #从上模型输出路径恢复一次恢复
             resume = Path(args.resume)
             cfg_fname = resume.parent / 'config.json'
         else:
@@ -68,12 +69,14 @@ class ConfigParser:
             resume = None
             cfg_fname = Path(args.config)
         
-        config = read_json(cfg_fname)
-        if args.config and resume:
+        config = read_json(cfg_fname) # 读取配置文件，json格式
+        if args.config and resume:  # 读的之前配置文件，如果指定了当次配置文件，用最新文件更新
             # update new config for fine-tuning
             config.update(read_json(args.config))
 
         # parse custom cli options into dictionary
+        # optimizer;args;lr -> lr_value
+        # 解析自定义参数到config
         modification = {opt.target : getattr(args, _get_opt_name(opt.flags)) for opt in options}
         return cls(config, resume, modification)
 

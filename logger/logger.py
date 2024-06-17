@@ -13,7 +13,7 @@ def setup_logging(save_dir, log_config='logger/logger_config.json', default_leve
         config = read_json(log_config)
         # modify logging paths based on run config
         for _, handler in config['handlers'].items():
-            if 'filename' in handler:
+            if 'filename' in handler: # filename 修改成绝对路径，因为配置文件中只配了文件名
                 handler['filename'] = str(save_dir / handler['filename'])
 
         logging.config.dictConfig(config)

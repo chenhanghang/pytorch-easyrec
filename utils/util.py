@@ -12,7 +12,7 @@ def ensure_dir(dirname):
 
 def read_json(fname):
     fname = Path(fname)
-    with fname.open('rt') as handle:
+    with fname.open('rt') as handle: # 加载 dict 词典
         return json.load(handle, object_hook=OrderedDict)
 
 def write_json(content, fname):

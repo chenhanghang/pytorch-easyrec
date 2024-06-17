@@ -2,11 +2,11 @@ import argparse
 import collections
 import torch
 import numpy as np
-import data_loader.data_loaders as module_data
+import data_loader as module_data
 import utils.loss as module_loss
 import utils.metric as module_metric
-import model.mnist_model as module_arch
-from connfigs.parse_config import ConfigParser
+import models as module_arch
+from configs.parse_config import ConfigParser
 from trainer import Trainer
 
 
@@ -25,7 +25,7 @@ def main(config):
     valid_data_loader = data_loader.split_validation()
 
     # 模型模块,创建模型对象
-    model = config.init_obj('arch', module_arch)
+    model = config.init_obj('arch', module_arch, data_loader.get_field_dims())
     logger.info(model) # 打印模型结构
 
     # 损失与评估模块, nll_loss
@@ -60,7 +60,7 @@ if __name__ == '__main__':
                       help='indices of GPUs to enable (default: all)')
 
     # 可以更改json文件中的参数直接用命令的方式
-    CustomArgs = collections.namedtuple('CustomArgs', 'flags type target')
+    CustomArgs = collections.namedtuple('CustomArgs', 'flags type target') #三个属性，flags type target 的对象
     options = [
         CustomArgs(['--lr', '--learning_rate'], type=float, target='optimizer;args;lr'),
         CustomArgs(['--bs', '--batch_size'], type=int, target='data_loader;args;batch_size')
