@@ -1,5 +1,6 @@
 import torch
 from sklearn import metrics
+from sklearn.metrics import roc_auc_score, mean_squared_error
 
 
 def accuracy(output, target): # 多分类准确率
@@ -25,3 +26,11 @@ def auc(output, target):
     with torch.no_grad():
         auc_score = metrics.roc_auc_score(target.cpu(), output.cpu())
     return auc_score
+
+def get_metric_func(task_type="classification"):
+    if task_type == "classification":
+        return roc_auc_score
+    elif task_type == "regression":
+        return mean_squared_error
+    else:
+        raise ValueError("task_type must be classification or regression")

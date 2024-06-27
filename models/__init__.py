@@ -10,5 +10,6 @@ from .rank.wide_deep import *
 from .rank.deep_fm import * # 深度和FM结合
 from .rank.dcn import *
 from .rank.pnn import *
+from .rank.fibinet import *
 
 from .srank.din import *
