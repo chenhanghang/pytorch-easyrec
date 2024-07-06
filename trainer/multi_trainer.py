@@ -34,13 +34,13 @@ class MTLTrainer(object):
         self,
         model,
         task_types,
-        optimizer_fn=torch.optim.Adam,
+        optimizer_fn=torch.optim.Adam,  # 优化器
         optimizer_params=None,
-        scheduler_fn=None,
+        scheduler_fn=None, # 学习率控制
         scheduler_params=None,
         adaptive_params=None,
         n_epoch=10,
-        earlystop_taskid=0,
+        earlystop_taskid=0, # 早停相关控制
         earlystop_patience=10,
         device="cpu",
         gpus=None,
@@ -58,7 +58,7 @@ class MTLTrainer(object):
         self.n_task = len(task_types)
         self.loss_weight = None
         self.adaptive_method = None
-        if adaptive_params is not None:
+        if adaptive_params is not None: # 梯度更新策略，优化多目标，默认不生效 ***
             if adaptive_params["method"] == "uwl":
                 self.adaptive_method = "uwl"
                 self.loss_weight = nn.ParameterList(nn.Parameter(torch.zeros(1)) for _ in range(self.n_task))
@@ -82,12 +82,16 @@ class MTLTrainer(object):
                 self.loss_weight = nn.ParameterList(nn.Parameter(torch.ones(1)) for _ in range(self.n_task))
                 self.model.add_module("loss weight", self.loss_weight)
         if self.adaptive_method != "metabalance":
-            self.optimizer = optimizer_fn(self.model.parameters(), **optimizer_params)  #default Adam optimizer
+            self.optimizer = optimizer_fn(self.model.parameters(), **optimizer_params)  
+            #default Adam optimizer，optimizer_params={"lr": learning_rate, "weight_decay": weight_decay}
         self.scheduler = None
         if scheduler_fn is not None:
             self.scheduler = scheduler_fn(self.optimizer, **scheduler_params)
-        self.loss_fns = [get_loss_func(task_type) for task_type in task_types]
-        self.evaluate_fns = [get_metric_func(task_type) for task_type in task_types]
+
+        # 损失函数和评价指标
+        self.loss_fns = [get_loss_func(task_type) for task_type in task_types]# torch.nn.BCELoss()注意：每个目标有一个
+        self.evaluate_fns = [get_metric_func(task_type) for task_type in task_types] # roc_auc_score
+        
         self.n_epoch = n_epoch
         self.earlystop_taskid = earlystop_taskid
         self.early_stopper = EarlyStopper(patience=earlystop_patience)
@@ -95,7 +99,7 @@ class MTLTrainer(object):
         self.gpus = gpus
         if len(gpus) > 1:
             print('parallel running on these gpus:', gpus)
-            self.model = torch.nn.DataParallel(self.model, device_ids=gpus)
+            self.model = torch.nn.DataParallel(self.model, device_ids=gpus) # 多gpu 控制
         self.device = torch.device(device)  #torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.model.to(self.device)
         self.model_path = model_path
@@ -169,14 +173,14 @@ class MTLTrainer(object):
                 _log_per_epoch.append(score)
 
             total_log.append(_log_per_epoch)
-
-            if self.early_stopper.stop_training(scores[self.earlystop_taskid], self.model.state_dict()):
-                print('validation best auc of main task %d: %.6f' %
-                      (self.earlystop_taskid, self.early_stopper.best_auc))
+            # 获取最优参数，早停相关逻辑控制
+            if self.early_stopper.stop_training(scores[self.earlystop_taskid], self.model.state_dict()): 
+                print('validation best auc of main task %d: %.6f' % (self.earlystop_taskid, self.early_stopper.best_auc))
                 self.model.load_state_dict(self.early_stopper.best_weights)
                 break
 
-        torch.save(self.model.state_dict(), os.path.join(self.model_path, "model_{}_{}.pth".format(mode, seed)))  #save best auc model
+        #save best auc model
+        torch.save(self.model.state_dict(), os.path.join(self.model_path, "model_{}_{}.pth".format(mode, seed)))  
 
         return total_log
 
@@ -198,7 +202,7 @@ class MTLTrainer(object):
 
 
     def predict(self, model, data_loader):
-        model.eval()
+        model.eval() # ** eval 模式
         predicts = list()
         with torch.no_grad():
             tk0 = tqdm.tqdm(data_loader, desc="predict", smoothing=0, mininterval=1.0)

@@ -67,9 +67,97 @@ class MLP(nn.Module):
     def forward(self, x):
         return self.mlp(x)
 
+
+class ConcatPooling(nn.Module):
+    """Keep the origin sequence embedding shape
+
+    Shape:
+    - Input: `(batch_size, seq_length, embed_dim)`
+    - Output: `(batch_size, seq_length, embed_dim)`
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x, mask=None):
+        return x
+
+
+class AveragePooling(nn.Module):
+    """Pooling the sequence embedding matrix by `mean`.
+
+    Shape:
+        - Input
+            x: `(batch_size, seq_length, embed_dim)`
+            mask: `(batch_size, 1, seq_length)`
+        - Output: `(batch_size, embed_dim)`
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x, mask=None):
+        if mask == None:
+            return torch.mean(x, dim=1)
+        else:
+            sum_pooling_matrix = torch.bmm(mask, x).squeeze(1)
+            non_padding_length = mask.sum(dim=-1)
+            return sum_pooling_matrix / (non_padding_length.float() + 1e-16)
+
+
+class SumPooling(nn.Module):
+    """Pooling the sequence embedding matrix by `sum`.
+
+    Shape:
+        - Input
+            x: `(batch_size, seq_length, embed_dim)`
+            mask: `(batch_size, 1, seq_length)`
+        - Output: `(batch_size, embed_dim)`
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x, mask=None):
+        if mask == None:
+            return torch.sum(x, dim=1)
+        else:
+            return torch.bmm(mask, x).squeeze(1)
+
+class InputMask(nn.Module):
+    """Return inputs mask from given features
+
+    Shape:
+        - Input: 
+            x (dict): {feature_name: feature_value}, sequence feature value is a 2D tensor with shape:`(batch_size, seq_len)`,\
+                      sparse/dense feature value is a 1D tensor with shape `(batch_size)`.
+            features (list or SparseFeature or SequenceFeature): Note that the elements in features are either all instances of SparseFeature or all instances of SequenceFeature.
+        - Output: 
+            - if input Sparse: `(batch_size, num_features)`
+            - if input Sequence: `(batch_size, num_features_seq, seq_length)`
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x, features):
+        mask = []
+        if not isinstance(features, list):
+            features = [features]
+        for fea in features:
+            if isinstance(fea, SparseFeature) or isinstance(fea, SequenceFeature):
+                if fea.padding_idx != None:
+                    fea_mask = x[fea.name].long() != fea.padding_idx
+                else:
+                    fea_mask = x[fea.name].long() != -1
+                mask.append(fea_mask.unsqueeze(1).float())
+            else:
+                raise ValueError("Only SparseFeature or SequenceFeature support to get mask.")
+        return torch.cat(mask, dim=1)
+
+
 class PredictionLayer(nn.Module):
     """Prediction Layer.
-
     Args:
         task_type (str): if `task_type='classification'`, then return sigmoid(x), 
                     change the input logits to probability. if`task_type='regression'`, then return x.
@@ -161,7 +249,7 @@ class EmbeddingLayer(nn.Module):
         for fea in features:
             if isinstance(fea, SparseFeature):
                 if fea.shared_with == None:
-                    sparse_emb.append(self.embed_dict[fea.name](x[fea.name].long()).unsqueeze(1))
+                    sparse_emb.append(self.embed_dict[fea.name](x[fea.name].long()).unsqueeze(1)) # b * emb -》 b * 1 * emb
                 else:
                     sparse_emb.append(self.embed_dict[fea.shared_with](x[fea.name].long()).unsqueeze(1))
             elif isinstance(fea, SequenceFeature):
@@ -195,8 +283,7 @@ class EmbeddingLayer(nn.Module):
             elif not dense_exists and sparse_exists:
                 return sparse_emb.flatten(start_dim=1)  #squeeze dim to : [batch_size, num_features*embed_dim]
             elif dense_exists and sparse_exists:
-                return torch.cat((sparse_emb.flatten(start_dim=1), dense_values),
-                                 dim=1)  #concat dense value with sparse embedding
+                return torch.cat((sparse_emb.flatten(start_dim=1), dense_values), dim=1)  #concat dense value with sparse embedding
             else:
                 raise ValueError("The input features can note be empty")
         else:

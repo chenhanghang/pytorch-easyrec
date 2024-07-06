@@ -16,7 +16,7 @@ class ESMM(nn.Module):
         super().__init__()
         self.user_features = user_features
         self.item_features = item_features
-        self.embedding = EmbeddingLayer(user_features + item_features)
+        self.embedding = EmbeddingLayer(user_features + item_features) # embding 层
         self.tower_dims = len(user_features) * user_features[0].embed_dim + len(item_features) * item_features[0].embed_dim
         self.tower_cvr = MLP_MUL(self.tower_dims, **cvr_params)
         self.tower_ctr = MLP_MUL(self.tower_dims, **ctr_params)

@@ -58,7 +58,7 @@ class SparseFeature(object):
     def __repr__(self):
         return f'<SparseFeature {self.name} with Embedding shape ({self.vocab_size}, {self.embed_dim})>'
 
-    def get_embedding_layer(self):
+    def get_embedding_layer(self): # 获取 emb 层
         if not hasattr(self, 'embed'):
             self.embed = self.initializer(self.vocab_size, self.embed_dim) # 返回ebb 词典并初始化
         return self.embed

@@ -1,6 +1,8 @@
 import sys
 import pandas as pd
 import torch
+sys.path.append("../")
+
 from models.multi_rank import SharedBottom, ESMM, MMOE, PLE, AITM
 from trainer import MTLTrainer
 from models.base.features import DenseFeature, SparseFeature

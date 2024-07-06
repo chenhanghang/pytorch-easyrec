@@ -21,8 +21,9 @@ class SharedBottom(nn.Module):
 
         self.bottom_mlp = MLP_MUL(self.bottom_dims, **{**bottom_params, **{"output_layer": False}})
         self.towers = nn.ModuleList(
+            # input_dim, output_layer=True, dims=None, dropout=0, activation="relu"
             MLP_MUL(bottom_params["dims"][-1], **tower_params_list[i]) for i in range(len(task_types)))
-        self.predict_layers = nn.ModuleList(PredictionLayer(task_type) for task_type in task_types)
+        self.predict_layers = nn.ModuleList(PredictionLayer(task_type) for task_type in task_types) # 添加sigmoid
 
     def forward(self, x):
         input_bottom = self.embedding(x, self.features, squeeze_dim=True)

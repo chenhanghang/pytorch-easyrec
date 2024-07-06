@@ -77,3 +77,80 @@ class DataGenerator(object):
         val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
         test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
         return train_dataloader, val_dataloader, test_dataloader
+
+
+def pad_sequences(sequences, maxlen=None, dtype='int32', padding='pre', truncating='pre', value=0.):
+    """ Pads sequences (list of list) to the ndarray of same length.
+        This is an equivalent implementation of tf.keras.preprocessing.sequence.pad_sequences
+        reference: https://github.com/huawei-noah/benchmark/tree/main/FuxiCTR/fuxictr
+    
+    Args:
+        sequences (pd.DataFrame): data that needs to pad or truncate
+        maxlen (int): maximum sequence length. Defaults to None.
+        dtype (str, optional): Defaults to 'int32'.
+        padding (str, optional): if len(sequences) less than maxlen, padding style, {'pre', 'post'}. Defaults to 'pre'.
+        truncating (str, optional): if len(sequences) more than maxlen, truncate style, {'pre', 'post'}. Defaults to 'pre'.
+        value (_type_, optional): Defaults to 0..
+
+    Returns:
+        _type_: _description_
+    """
+    
+
+    assert padding in ["pre", "post"], "Invalid padding={}.".format(padding)
+    assert truncating in ["pre", "post"], "Invalid truncating={}.".format(truncating)
+
+    if maxlen is None:
+        maxlen = max(len(x) for x in sequences)
+    arr = np.full((len(sequences), maxlen), value, dtype=dtype)
+    for idx, x in enumerate(sequences):
+        if len(x) == 0:
+            continue  # empty list
+        if truncating == 'pre':
+            trunc = x[-maxlen:]
+        else:
+            trunc = x[:maxlen]
+        trunc = np.asarray(trunc, dtype=dtype)
+
+        if padding == 'pre':
+            arr[idx, -len(trunc):] = trunc
+        else:
+            arr[idx, :len(trunc)] = trunc
+    return arr
+
+def df_to_dict(data):
+    """
+    Convert the DataFrame to a dict type input that the network can accept
+    Args:
+        data (pd.DataFrame): datasets of type DataFrame
+    Returns:
+        The converted dict, which can be used directly into the input network
+    """
+    data_dict = data.to_dict('list')
+    for key in data.keys():
+        data_dict[key] = np.array(data_dict[key])
+    return data_dict
+
+def neg_sample(click_hist, item_size):
+    neg = random.randint(1, item_size)
+    while neg in click_hist:
+        neg = random.randint(1, item_size)
+    return neg
+
+
+def array_replace_with_dict(array, dic):
+    """Replace values in NumPy array based on dictionary.
+    Args:
+        array (np.array): a numpy array
+        dic (dict): a map dict
+
+    Returns:
+        np.array: array with replace
+    """
+    # Extract out keys and values
+    k = np.array(list(dic.keys()))
+    v = np.array(list(dic.values()))
+
+    # Get argsort indices
+    idx = k.argsort()
+    return v[idx[np.searchsorted(k, array, sorter=idx)]]

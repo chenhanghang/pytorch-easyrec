@@ -33,6 +33,7 @@ tmp/
 *.manifest
 *.spec
 
+ml-1m/
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
