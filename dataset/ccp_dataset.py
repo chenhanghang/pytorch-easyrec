@@ -10,7 +10,7 @@ from sklearn.preprocessing import LabelEncoder, OrdinalEncoder, KBinsDiscretizer
 from sklearn.model_selection import train_test_split
 from sklearn import metrics
 from torch.utils.data import Dataset
-from models.base.layer import 
+from models.base.layer import Dataset
 
 
 class CcpDataset(Dataset):

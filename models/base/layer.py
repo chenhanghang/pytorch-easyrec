@@ -234,7 +234,7 @@ class EmbeddingLayer(nn.Module):
         self.n_dense = 0
 
         for fea in features:
-            if fea.name in self.embed_dict:  #exist
+            if fea.name in self.embed_dict:  # exist
                 continue
             if isinstance(fea, SparseFeature) and fea.shared_with == None:
                 self.embed_dict[fea.name] = fea.get_embedding_layer()
@@ -249,7 +249,7 @@ class EmbeddingLayer(nn.Module):
         for fea in features:
             if isinstance(fea, SparseFeature):
                 if fea.shared_with == None:
-                    sparse_emb.append(self.embed_dict[fea.name](x[fea.name].long()).unsqueeze(1)) # b * emb -》 b * 1 * emb
+                    sparse_emb.append(self.embed_dict[fea.name](x[fea.name].long()).unsqueeze(1)) # b * emb -> b * 1 * emb
                 else:
                     sparse_emb.append(self.embed_dict[fea.shared_with](x[fea.name].long()).unsqueeze(1))
             elif isinstance(fea, SequenceFeature):

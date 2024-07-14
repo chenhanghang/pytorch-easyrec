@@ -1,5 +1,5 @@
 import sys
-sys.path.append("../")
+#sys.path.append("../")
 import os
 import numpy as np
 import pandas as pd
@@ -22,17 +22,18 @@ def get_movielens_data(data_path, load_cache=False):
     sparse_features = ['user_id', 'movie_id', 'gender', 'age', 'occupation', 'zip', "cate_id"]
     user_col, item_col = "user_id", "movie_id"
 
-    feature_max_idx = {}
+    feature_max_idx = {} # 记录特征和最大值
     for feature in sparse_features:
         lbe = LabelEncoder()
-        data[feature] = lbe.fit_transform(data[feature]) + 1
+        data[feature] = lbe.fit_transform(data[feature]) + 1 # 从1开始计数
         feature_max_idx[feature] = data[feature].max() + 1
+        # 记录 encode_id 和真实值 的映射关系
         if feature == user_col:
             user_map = {encode_id + 1: raw_id for encode_id, raw_id in enumerate(lbe.classes_)}  #encode user id: raw user id
         if feature == item_col:
             item_map = {encode_id + 1: raw_id for encode_id, raw_id in enumerate(lbe.classes_)}  #encode item id: raw item id
     np.save("./data/ml-1m/saved/raw_id_maps.npy", np.array((user_map, item_map), dtype=object))
-
+    #用户和item 画像
     user_profile = data[["user_id", "gender", "age", "occupation", "zip"]].drop_duplicates('user_id')
     item_profile = data[["movie_id", "cate_id"]].drop_duplicates('movie_id')
 
@@ -57,6 +58,7 @@ def get_movielens_data(data_path, load_cache=False):
     user_cols = ['user_id', 'gender', 'age', 'occupation', 'zip']
     item_cols = ['movie_id', "cate_id"]
 
+    # 用户特征
     user_features = [
         SparseFeature(feature_name, vocab_size=feature_max_idx[feature_name], embed_dim=16) for feature_name in user_cols
     ]
@@ -68,11 +70,12 @@ def get_movielens_data(data_path, load_cache=False):
                         shared_with="movie_id")
     ]
 
+    # item 特征
     item_features = [
         SparseFeature(feature_name, vocab_size=feature_max_idx[feature_name], embed_dim=16) for feature_name in item_cols
     ]
 
-    all_item = df_to_dict(item_profile)
+    all_item = df_to_dict(item_profile) # 用于评估效果
     test_user = x_test
     return user_features, item_features, x_train, y_train, all_item, test_user
 

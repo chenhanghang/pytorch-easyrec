@@ -27,13 +27,13 @@ class MatchTrainer(object):
         model,
         mode=0,
         optimizer_fn=torch.optim.Adam,
-            optimizer_params=None,
+        optimizer_params=None,
         scheduler_fn=None,
         scheduler_params=None,
         n_epoch=10,
         earlystop_patience=10,
         device="cpu",
-            gpus=None,
+        gpus=None,
         model_path="./",
     ):
         self.model = model  # for uniform weights save method in one gpu or multi gpu
@@ -51,19 +51,19 @@ class MatchTrainer(object):
                 "weight_decay": 1e-5
             }
         self.mode = mode
-        if mode == 0:  #point-wise loss, binary cross_entropy
+        if mode == 0:  # point-wise loss, binary cross_entropy
             self.criterion = torch.nn.BCELoss()  #交叉墒loss，可以是多维度，输入是 sigmoid 后，b*k，b*k
-        elif mode == 1:  #pair-wise loss
+        elif mode == 1:  # pair-wise loss
             self.criterion = BPRLoss()
-        elif mode == 2:  #list-wise loss, softmax
+        elif mode == 2:  # list-wise loss, softmax
             self.criterion = torch.nn.CrossEntropyLoss() # 输入：b*n，b（是真实label 或者是真实分布）
         else:
             raise ValueError("mode only contain value in %s, but got %s" % ([0, 1, 2], mode))
-        self.optimizer = optimizer_fn(self.model.parameters(), **optimizer_params)  #default optimizer
+        self.optimizer = optimizer_fn(self.model.parameters(), **optimizer_params)  # default optimizer
         self.scheduler = None
         if scheduler_fn is not None:
             self.scheduler = scheduler_fn(self.optimizer, **scheduler_params)
-        self.evaluate_fn = roc_auc_score  #default evaluate function
+        self.evaluate_fn = roc_auc_score  # default evaluate function
         self.n_epoch = n_epoch
         self.early_stopper = EarlyStopper(patience=earlystop_patience)
         self.model_path = model_path
@@ -76,10 +76,10 @@ class MatchTrainer(object):
             x_dict = {k: v.to(self.device) for k, v in x_dict.items()}  #tensor to GPU
             y = y.to(self.device)
             if self.mode == 0:
-                y = y.float()  #torch._C._nn.binary_cross_entropy expected Float，重要！！！！
+                y = y.float()  # torch._C._nn.binary_cross_entropy expected Float，重要！！！！
             else:
                 y = y.long()  #
-            if self.mode == 1:  #pair_wise
+            if self.mode == 1:  # pair_wise
                 pos_score, neg_score = self.model(x_dict)
                 loss = self.criterion(pos_score, neg_score)
             else:
@@ -165,5 +165,5 @@ class MatchTrainer(object):
             for i, x_dict in enumerate(tk0):
                 x_dict = {k: v.to(self.device) for k, v in x_dict.items()}
                 y_pred = model(x_dict)
-                predicts.append(y_pred.data)
+                predicts.append(y_pred.data) # y_pred.data 获取 预测输出
         return torch.cat(predicts, dim=0)
