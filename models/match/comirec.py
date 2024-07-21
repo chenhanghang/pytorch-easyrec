@@ -51,15 +51,16 @@ class ComirecSA(torch.nn.Module):
         if self.mode == "item":
             return item_embedding
 
-        pos_item_embedding = item_embedding[:,0,:]
+        pos_item_embedding = item_embedding[:, 0, :]  # b*emb
+        # b* interest_num * emb b*emb*1
         dot_res = torch.bmm(user_embedding, pos_item_embedding.squeeze(1).unsqueeze(-1))
         k_index = torch.argmax(dot_res, dim=1)
         best_interest_emb = torch.rand(user_embedding.shape[0], user_embedding.shape[2]).to(user_embedding.device)
         for k in range(user_embedding.shape[0]):
             best_interest_emb[k, :] = user_embedding[k, k_index[k], :]
-        best_interest_emb = best_interest_emb.unsqueeze(1)
+        best_interest_emb = best_interest_emb.unsqueeze(1)  # b*emb -> b*1*emb
 
-        y = torch.mul(best_interest_emb, item_embedding).sum(dim=1)
+        y = torch.mul(best_interest_emb, item_embedding).sum(dim=1)  # b*1*emb mul b*k*emb -> b*k*emb -> b*k  broadcast 机制
 
         return y
 
@@ -223,7 +224,7 @@ class MultiInterestSA(nn.Module):
         else:
             A = F.softmax(torch.einsum('bsd, dk -> bsk', H, self.W2), dim=1)
         A = A.permute(0, 2, 1) # b,interest_num,s
-        multi_interest_emb = torch.matmul(A, seq_emb)
+        multi_interest_emb = torch.matmul(A, seq_emb)  # [b,interest_num,s]* [b,s,e] -> [b,interest_num,emb]
         return multi_interest_emb
 
 class CapsuleNetwork(nn.Module):

@@ -56,7 +56,7 @@ class MatchTrainer(object):
         elif mode == 1:  # pair-wise loss
             self.criterion = BPRLoss()
         elif mode == 2:  # list-wise loss, softmax
-            self.criterion = torch.nn.CrossEntropyLoss() # 输入：b*n，b（是真实label 或者是真实分布）
+            self.criterion = torch.nn.CrossEntropyLoss() # 输入：b*n， b（是真实label 或者是真实分布）
         else:
             raise ValueError("mode only contain value in %s, but got %s" % ([0, 1, 2], mode))
         self.optimizer = optimizer_fn(self.model.parameters(), **optimizer_params)  # default optimizer
@@ -73,7 +73,7 @@ class MatchTrainer(object):
         total_loss = 0
         tk0 = tqdm.tqdm(data_loader, desc="train", smoothing=0, mininterval=1.0)
         for i, (x_dict, y) in enumerate(tk0):
-            x_dict = {k: v.to(self.device) for k, v in x_dict.items()}  #tensor to GPU
+            x_dict = {k: v.to(self.device) for k, v in x_dict.items()}  # tensor to GPU
             y = y.to(self.device)
             if self.mode == 0:
                 y = y.float()  # torch._C._nn.binary_cross_entropy expected Float，重要！！！！
@@ -114,12 +114,12 @@ class MatchTrainer(object):
             if self.scheduler is not None:
                 if epoch_i % self.scheduler.step_size == 0:
                     print("Current lr : {}".format(self.optimizer.state_dict()['param_groups'][0]['lr']))
-                self.scheduler.step()  #update lr in epoch level by scheduler
+                self.scheduler.step()  # update lr in epoch level by scheduler
 
             if val_dataloader:
                 auc = self.evaluate(self.model, val_dataloader)
                 print('epoch:', epoch_i, 'validation: auc:', auc)
-                if self.early_stopper.stop_training(auc, self.model.state_dict()):
+                if self.early_stopper.stop_training(auc, self.model.state_dict()): # state_dict包含所有参数的dict
                     print(f'validation: best auc: {self.early_stopper.best_auc}')
                     self.model.load_state_dict(self.early_stopper.best_weights)
                     break

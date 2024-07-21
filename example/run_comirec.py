@@ -132,5 +132,5 @@ if __name__ == '__main__':
     main(args.dataset_path, args.model_name, args.epoch, args.learning_rate, args.batch_size, args.weight_decay, args.device,
          args.save_dir, args.seed)
 """
-python run_ml_youtube_dnn.py
+python run_comirec.py --device=cuda:0
 """

@@ -15,6 +15,7 @@ class TorchDataset(Dataset):
         self.y = y
 
     def __getitem__(self, index):
+        # map:{k,v},label
         return {k: v[index] for k, v in self.x.items()}, self.y[index]
 
     def __len__(self):
@@ -25,7 +26,7 @@ class PredictDataset(Dataset):
 
     def __init__(self, x):
         super().__init__()
-        self.x = x
+        self.x = x # map:{name: numpy_array}
 
     def __getitem__(self, index):
         return {k: v[index] for k, v in self.x.items()}
@@ -126,9 +127,9 @@ def df_to_dict(data):
     Returns:
         The converted dict, which can be used directly into the input network
     """
-    data_dict = data.to_dict('list')
+    data_dict = data.to_dict('list') # {name: list_list}
     for key in data.keys():
-        data_dict[key] = np.array(data_dict[key])
+        data_dict[key] = np.array(data_dict[key])  # 转numpy
     return data_dict
 
 def neg_sample(click_hist, item_size):
